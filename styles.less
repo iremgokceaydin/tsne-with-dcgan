@@ -1,0 +1,83 @@
+body {
+    text-align: center;
+}
+
+textarea {
+    width: 200px;
+    height: 100px;
+}
+
+label {
+    font-weight: 300;
+}
+
+svg {
+    font-size: 12px;
+}
+
+g {
+    transform-origin: 50% 50% 0;
+}
+
+button {
+    margin: 12px 0 8px !important;
+}
+
+image {
+    transition: width .5s, height .5s;
+    transition-timing-function: ease-in-out;
+    
+    &.small {
+        width: 24px;
+        height: 24px;
+    }
+    &.big {
+        width: 512px;
+        height: 512px;
+    }
+}
+
+.added {
+    font-size: 16px;
+    font-weight: 600;
+    font-stretch: condensed;
+    position: absolute;
+    padding: 12px;
+
+    .keyframes(fade-in;{
+		0% { opacity: 0; }
+		100% { opacity: 1; }
+		});
+
+    .animation(fade-in .3s);
+
+}
+
+.sliderContainer {
+    width: 200px;
+    display: inline-grid;
+    font-size: 11px;
+
+    .ui-slider-handle {
+        width: 1.5em !important;
+        height: 1.5em !important;
+        top: -.4em !important;
+        text-align: center;
+    }
+}
+
+.keyframes(@name; @arguments) {
+	@-moz-keyframes @name { @arguments(); }
+	@-webkit-keyframes @name { @arguments(); }
+	@keyframes @name { @arguments(); }
+}
+
+.animation(@arguments) {
+	-webkit-animation: @arguments;
+	-moz-animation: @arguments;
+	animation: @arguments;
+}
+
+#atonce {
+    margin-left: 20px;
+}
