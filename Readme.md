@@ -1,11 +1,11 @@
 
 # tSNEJS
 
-Check out the main repo https://github.com/karpathy/tsnejs
-
-tSNEJS is an implementation of t-SNE visualization algorithm in Javascript. 
+tSNEJS is an implementation of t-SNE visualization algorithm in Javascript. Check out the main repo https://github.com/karpathy/tsnejs 
 
 t-SNE is a visualization algorithm that embeds things in 2 or 3 dimensions. If you have some data and you can measure their pairwise differences, t-SNE visualization can help you identify clusters in your data. See example below.
+
+In this project I used the images from the result of train process of DCGAN machine learning algorithm and the discriminator and generator loss values as the 2 dimensional data points from 100 epocs to be able to see the similarities between the images generated over time. In a sense, I intent to use tSNE visualization to be able to get more involved in the learning process of an algorithm in an interactive way.
 
 ## Online demo
 The main project website has a [live example](http://cs.stanford.edu/people/karpathy/tsnejs/) and more description.
