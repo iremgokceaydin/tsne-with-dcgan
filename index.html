@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet/less" type="text/css" href="styles.less" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="tsne.js"></script>
+    
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+
+    <script src="//cdn.jsdelivr.net/npm/less" ></script>
+</head>
+<html leng="en">
+    <script>
+        var width = window.innerWidth - 30;
+        var height = window.innerHeight - 90;
+        var T;
+        var data;
+        var doTrain;
+        var jsonData;
+        var counter = 2;
+        var addingFreq = 5000;
+        var loadAtOnce = false;
+
+        var tx=0, ty=0;
+        var ss=1;
+        //rendering related start
+        function zoomHandler() {
+            tx = d3.event.transform.x;
+            ty = d3.event.transform.y;
+            ss = d3.event.transform.k;
+        }
+
+        function updateEmbedding() {
+            // get current solution
+            var Y = T.getSolution();
+            // move the groups accordingly
+            gs.attr("transform", function(d, i) { 
+                return "translate(" + ((Y[i][0]*20*ss + tx) + 400) + "," + ((Y[i][1]*20*ss + ty) + 400) + ")"; });
+        }
+
+        var svg;
+        function initEmbedding() {
+            $("#embed").empty();
+            var div = d3.select("#embed");
+            svg = div.append("svg") // svg is global
+                .attr("width", width)
+                .attr("height", height);
+        }
+
+        var gs;
+        var cs;
+        var ts;
+        function drawEmbedding() {
+            addPoint();
+            addPoint();
+
+            var zoomListener = d3.zoom()
+            .scaleExtent([0.1, 10])
+            .extent([[0, 0], [width, height]])
+            .on("zoom", zoomHandler);
+            zoomListener(svg);
+        }
+
+        function addPoint() {
+            gs_local = svg.append("g").data(data[counter - 1])
+            .attr("class", "u");
+
+            gs_local.append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 5)
+            .attr('stroke-width', 1)
+            .attr('stroke', 'black')
+            .attr('fill', jsonData[counter - 1]['d_loss'] > .5 ? 'green' : 'orange');
+
+            gs_local.append("svg:image")
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', 24)
+            .attr('height', 24)
+            .attr("class", "small")
+            .attr("xlink:href", function(d, i) { return "./imgs/" + jsonData[counter - 1]['sample_img_name']; })
+            .on("mouseover", function(d, i){ d3.select(this).classed('big',true);})
+            .on("mouseout", function(d, i){ d3.select(this).classed('big',false);})
+
+            gs_local.append("text")
+                .attr("text-anchor", "top")
+                .attr("transform", "translate(5, -5)")
+                .attr("font-size", 12)
+                .attr("fill", "#333")
+                .text(function(d,i) { return labels[counter - 1]; });
+
+            gs = svg.selectAll("g");
+            d3.select('.added').classed('hide',false);
+            setTimeout(function() {d3.select('.added').classed('hide',true)}, 1000)
+            counter++;
+        }
+
+        labels = [];
+        function preProLabels() {
+            labels = jsonData.map(d => d['label']);
+        }
+        //render related end
+
+        function preProData() {
+            var raw_data = [];
+            $.getJSON("data/data.json", function(result) {
+                jsonData = result;
+                result.forEach(d => {
+                    var data_point = [d['d_loss'], d['g_loss']];
+                    raw_data.push(data_point);
+                });
+                data = raw_data;
+                preProLabels();
+            });
+        }
+
+        function loadData() {
+            preProData();
+            $("#slider").slider({
+                value: 5,
+                min: 1,
+                change: function() {
+                    var value = $("#slider").slider("option","value");
+                    $("#slider").find(".ui-slider-handle").text(value);
+                    addingFreq = value * 1000;
+                },
+                slide: function() {
+                    var value = $("#slider").slider("option","value");
+                    $("#slider").find(".ui-slider-handle").text(value);
+                    addingFreq = value * 1000;
+                }
+            });
+            $("#slider").find(".ui-slider-handle").text($("#slider").slider("option","value"));
+        }
+
+        var iid;
+        function init() {
+            console.log(data);
+            initEmbedding();
+
+            var opt = {}
+            opt.epsilon = 10; // epsilon is learning rate (10 = default)
+            opt.perplexity = 30; // roughly how many neighbors each point influences (30 = default)
+            opt.dim = 2; // dimensionality of the embedding (2 = default)
+
+            T = new tsnejs.tSNE(opt); // create a tSNE instance
+            T.initDataRaw(data.slice(0, counter));
+            drawEmbedding();
+            iid = setInterval(step, 100);
+            doTrain = true;
+
+            setTimeout(updateDataAndEmbed, addingFreq);
+        }
+
+        function updateDataAndEmbed () {
+            if (counter < data.length) {
+                T.initDataRaw(data.slice(0, counter));
+                addPoint();
+                setTimeout(updateDataAndEmbed, addingFreq);
+            }
+        }
+
+        var stepnum = 0;
+        function step() {
+            if(doTrain) {
+                var cost = T.step(); // do a few steps
+            }
+            updateEmbedding();
+        }
+
+        function stop () {
+            doTrain = false;
+            clearInterval(iid);
+        }
+
+        function toggleAtOnce() {
+            loadAtOnce = !loadAtOnce;
+            if (loadAtOnce) {
+                addingFreq = 10;
+            }
+        }
+            </script>
+
+    <body onload="loadData()">
+        <div>
+            <button type="button" onclick="init()" class="btn">Start</button>
+            <button type="button" onclick="stop()" class="btn">Stop</button>  
+        </div>
+        <div class="sliderContainer">
+            <div id="slider"></div>
+        </div>
+
+        <input id="atonce" name="at_once" type="checkbox" onchange="toggleAtOnce()">
+        <label for="atonce">Add at once</label>
+
+        <div class="added hide">Added</div>
+
+
+        <div id="embed"></div>
+    </body>
+</html>
