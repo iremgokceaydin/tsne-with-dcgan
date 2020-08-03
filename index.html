@@ -74,7 +74,7 @@
             .attr("r", 5)
             .attr('stroke-width', 1)
             .attr('stroke', 'black')
-            .attr('fill', jsonData[counter - 1]['d_loss'] > .5 ? 'green' : 'orange');
+            .attr('fill', jsonData[counter - 1]['d_loss'] >= .5 ? 'green' : 'orange');
 
             gs_local.append("svg:image")
             .attr('x', 0)
